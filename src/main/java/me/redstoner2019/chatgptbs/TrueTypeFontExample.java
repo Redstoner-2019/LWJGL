@@ -154,7 +154,7 @@ public class TrueTypeFontExample {
             // Render text with different font sizes
             renderText("Dies ist ein Test!", 50, 200, 90,Color.GREEN);
 
-            Renderer.renderTexture(0,0,1,1,texture,true);
+            //Renderer.renderTexture(0,0,1,1,texture,true);
 
             GLFW.glfwSwapBuffers(window); // swap the color buffers
 

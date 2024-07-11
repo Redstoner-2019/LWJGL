@@ -125,7 +125,8 @@ public class Texture {
             STBImage.stbi_set_flip_vertically_on_load(true);
             ByteBuffer image = STBImage.stbi_load(filePath, width, height, channels, 4);
             if (image == null) {
-                throw new RuntimeException("Failed to load texture file: " + filePath);
+                System.out.println("Failed to load texture file: " + filePath);
+                return -1;
             }
 
             System.out.println("Loaded texture: " + filePath + " (Width: " + width.get(0) + ", Height: " + height.get(0) + ")");

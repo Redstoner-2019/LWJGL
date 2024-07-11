@@ -94,8 +94,6 @@ public class Font {
             int charWidth = charImage.getWidth();
             int charHeight = charImage.getHeight();
 
-            System.out.println(imageHeight);
-
             Glyph ch = new Glyph((float) charWidth / imageWidth, (float) 1 /imageHeight, (float) x / imageWidth, 1, 0f);
             g.drawImage(charImage, x, 0, null);
             x += charWidth;

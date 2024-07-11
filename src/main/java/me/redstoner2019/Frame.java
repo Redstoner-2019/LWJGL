@@ -6,34 +6,35 @@ import me.redstoner2019.graphics.general.ShaderProgram;
 import me.redstoner2019.graphics.general.Texture;
 import me.redstoner2019.graphics.font.Font;
 import org.lwjgl.glfw.*;
-import org.lwjgl.nanovg.NVGColor;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
 
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
-import java.util.Random;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static java.sql.Types.NULL;
-import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.nanovg.NanoVG.*;
-import static org.lwjgl.nanovg.NanoVGGL2.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class Frame {
 
-    // The window handle
     private long window;
-    private Texture texture;
+    private Texture loadingTexture;
     public static int width;
     public static int height;
     public static float aspectRatio;
     public static ShaderProgram textureShader;
     public static int vao;
-    private Font font;
     private boolean showDebug = true;
+    private HashMap<String,Texture> textures = new HashMap<>();
+    private boolean loadingComplete = false;
+    private List<String> files = new ArrayList<>();
+    private Renderer renderer = new Renderer();
 
     public void run() throws IOException {
         init();
@@ -41,8 +42,6 @@ public class Frame {
     }
 
     private void init() throws IOException {
-        System.out.println("debug");
-
         GLFWErrorCallback.createPrint(System.err).set();
         if (!GLFW.glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
@@ -105,17 +104,20 @@ public class Frame {
         textureShader.attachShader(fragmentShader);
         textureShader.link();
 
-        texture = Texture.loadTexture("C:\\Users\\Redstoner_2019\\Projects\\LWJGL\\src\\main\\resources\\textures\\optadata.jpg");
-        font = new Font();
+        loadingTexture = Texture.loadTexture("C:\\Users\\l.paepke\\Projects\\LWJGL\\src\\main\\resources\\textures\\jump.jpg");
+
+        files.addAll(listFilesUsingJavaIO("C:\\Users\\l.paepke\\Projects\\LWJGL\\src\\main\\resources\\textures"));
+    }
+
+    public Set<String> listFilesUsingJavaIO(String dir) {
+        return Stream.of(new File(dir).listFiles())
+                .filter(file -> !file.isDirectory())
+                .map(File::getAbsolutePath)
+                .collect(Collectors.toSet());
     }
 
     private void loop() {
         GL11.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(0, width, height, 0, -1, 1);
-        glMatrixMode(GL_MODELVIEW);
 
         long lastUpdate = System.currentTimeMillis();
         int frames = 0;
@@ -123,21 +125,83 @@ public class Frame {
         double lastFrameTime = 0;
         int componentsDrawn = 0;
 
+        boolean mainmenuFreddyMove = false;
+        int mainMenuFreddyStage = 0;
+
+        Random random = new Random();
+
+        int id = 0;
+        long lastRandomChange = System.currentTimeMillis();
+
         while (!GLFW.glfwWindowShouldClose(window)) {
             double start = glfwGetTime();
 
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            if(showDebug){
-                Renderer.renderText("Dies ist ein Test!", 20, 0, 20,Color.GREEN);
-
-                Renderer.renderText("FPS: " + fps, 20, 20,20, new Color(1f, 0f, 0f));
-                Renderer.renderText("Last Frame Time: " + String.format("%.2f ms",lastFrameTime*1000), 20, 40,20, new Color(1f, 0, 0));
-                Renderer.renderText("Time: " + String.format("%.4fs",glfwGetTime()), 20, 60,20, new Color(1f, 1f, 1f));
-                Renderer.renderText("Components Drawn: " + componentsDrawn, 20, 80,20, new Color(1f, 1f, 1f));
+            if(System.currentTimeMillis() - lastRandomChange >= 20){
+                lastRandomChange = System.currentTimeMillis();
+                if(mainmenuFreddyMove){
+                    if(mainMenuFreddyStage > 3){
+                        mainMenuFreddyStage = 0;
+                        mainmenuFreddyMove = false;
+                    } else if(random.nextInt(5) == 2){
+                        mainMenuFreddyStage++;
+                        if(mainMenuFreddyStage == 4) {
+                            mainMenuFreddyStage = 0;
+                            mainmenuFreddyMove = false;
+                        }
+                    }
+                } else if(random.nextInt(40) == 5){
+                    mainmenuFreddyMove = true;
+                }
             }
 
-            Renderer.renderTexture(0,0,1,1,texture,true);
+            if(id < files.size()) {
+                File f = new File(files.get(id));
+                if(f.getName().endsWith(".png") || f.getName().endsWith(".jpg")) {
+                    textures.put(f.getName(),Texture.loadTexture(f.getAbsolutePath()));
+                }
+                id++;
+            } else loadingComplete = true;
+
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            glOrtho(0, width, height, 0, -1, 1);
+            glMatrixMode(GL_MODELVIEW);
+
+            if(loadingComplete) {
+
+                switch (mainMenuFreddyStage) {
+                    case 0: {
+                        renderer.renderTexture(0, 0, 2, 2, textures.get("431.png"), true, true, (float) (Math.sin(glfwGetTime()) * 0.1f + 0.5f));
+                        break;
+                    }
+                    case 1: {
+                        renderer.renderTexture(0, 0, 2, 2, textures.get("440.png"), true, true, (float) (Math.sin(glfwGetTime()) * 0.1f + 0.5f));
+                        break;
+                    }
+                    case 2: {
+                        renderer.renderTexture(0, 0, 2, 2, textures.get("441.png"), true, true, (float) (Math.sin(glfwGetTime()) * 0.1f + 0.5f));
+                        break;
+                    }
+                    case 3: {
+                        renderer.renderTexture(0, 0, 2, 2, textures.get("442.png"), true, true, (float) (Math.sin(glfwGetTime()) * 0.1f + 0.5f));
+                        break;
+                    }
+                }
+
+                renderer.renderTexture(-.6f,.6f,.2f,.4f,textures.get("444.png"),true,false,0f);
+                renderer.renderTexture(-.6f,.2f,.2f,.08f,textures.get("448.png"),true,false,0f);
+                renderer.renderTexture(-.6f,0,.2f,.08f,textures.get("449.png"),true,false,0f);
+            }
+            else renderer.renderTexture(0,0,2,2,loadingTexture,true,false,0);
+
+            if(showDebug){
+                renderer.renderText("FPS: " + fps, 10, 20,20, new Color(1f, 0f, 0f));
+                renderer.renderText("Last Frame Time: " + String.format("%.2f ms",lastFrameTime*1000), 10, 40,20, new Color(1f, 0, 0));
+                renderer.renderText("Time: " + String.format("%.4fs",glfwGetTime()), 10, 60,20, new Color(1f, 1f, 1f));
+                renderer.renderText("Components Drawn: " + componentsDrawn, 10, 80,20, new Color(1f, 1f, 1f));
+            }
 
             GLFW.glfwSwapBuffers(window);
             GLFW.glfwPollEvents();
@@ -181,8 +245,6 @@ public class Frame {
 
         int vao = GL30.glGenVertexArrays();
         GL30.glBindVertexArray(vao);
-
-        System.out.println(vao);
 
         int vbo = GL15.glGenBuffers();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
