@@ -1,13 +1,10 @@
 package me.redstoner2019.graphics;
 
 import me.redstoner2019.Frame;
-import me.redstoner2019.graphics.font.Font;
-import me.redstoner2019.graphics.font.Glyph;
+import me.redstoner2019.graphics.general.Shader;
+import me.redstoner2019.graphics.general.ShaderProgram;
 import me.redstoner2019.graphics.general.Texture;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.*;
 import org.lwjgl.stb.STBTTAlignedQuad;
 import org.lwjgl.stb.STBTTBakedChar;
 import org.lwjgl.system.MemoryStack;
@@ -25,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.stb.STBTruetype.stbtt_BakeFontBitmap;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetBakedQuad;
@@ -33,20 +29,41 @@ import static org.lwjgl.stb.STBTruetype.stbtt_GetBakedQuad;
 public class Renderer {
     private final int BITMAP_W = 512;
     private final int BITMAP_H = 512;
+    private int width;
+    private int height;
 
     private Map<Float, Renderer.FontData> fontDataMap = new HashMap<>();
     private String fontPath = "C:\\Users\\l.paepke\\Projects\\LWJGL\\src\\main\\resources\\fonts\\TNR.ttf";
 
-    public void init(){
+    public int vao;
+    public ShaderProgram textureShader;
 
+    public Renderer(){
+        vao = createVertexArray();
+
+        Shader vertexShader = Shader.loadShader(GL20.GL_VERTEX_SHADER,"shader/vertex.vert");
+        Shader fragmentShader = Shader.loadShader(GL20.GL_FRAGMENT_SHADER,"shader/fragment.frag");
+
+        textureShader = new ShaderProgram();
+        textureShader.attachShader(vertexShader);
+        textureShader.attachShader(fragmentShader);
+        textureShader.link();
     }
 
-    public void renderTexture(float x, float y, float w, float h,float sectionX, float sectionY, float sectionW, float sectionH, Texture texture, boolean overrideAspectRatio, Color color, boolean hasNoise, float noiseStrength){
-        renderTexture(x,y,w,h,sectionX,sectionY,sectionW,sectionH,texture.getId(),overrideAspectRatio,color,hasNoise,noiseStrength);
+    public void setWidth(int width) {
+        this.width = width;
     }
 
-    public void renderTexture(float x, float y, float w, float h,float sectionX, float sectionY, float sectionW, float sectionH, int texture, boolean overrideAspectRatio, Color color, boolean hasNoise, float noiseStrength){
-        GL20.glUseProgram(Frame.textureShader.id);
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public void renderTexture(float x, float y, float w, float h, float sectionX, float sectionY, float sectionW, float sectionH, Texture texture, boolean overrideAspectRatio, Color color, boolean hasNoise, float noiseStrength){
+        renderTexture(x,y,w,h,sectionX,sectionY,sectionW,sectionH,texture.getId(),color,hasNoise,noiseStrength);
+    }
+
+    public void renderTexture(float x, float y, float w, float h,float sectionX, float sectionY, float sectionW, float sectionH, int texture, Color color, boolean hasNoise, float noiseStrength){
+        GL20.glUseProgram(textureShader.id);
         // Enable blending
         glEnable(GL_BLEND);
 
@@ -58,41 +75,41 @@ public class Renderer {
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
 
-        int textureUniformLocation = GL20.glGetUniformLocation(Frame.textureShader.id, "textureSampler");
+        int textureUniformLocation = GL20.glGetUniformLocation(textureShader.id, "textureSampler");
         GL20.glUniform1i(textureUniformLocation, 0);
 
-        int texOffsetLocation = GL20.glGetUniformLocation(Frame.textureShader.id, "texOffset");
+        int texOffsetLocation = GL20.glGetUniformLocation(textureShader.id, "texOffset");
         GL20.glUniform2f(texOffsetLocation, sectionX, sectionY);
 
-        int texScaleLocation = GL20.glGetUniformLocation(Frame.textureShader.id, "texScale");
+        int texScaleLocation = GL20.glGetUniformLocation(textureShader.id, "texScale");
         GL20.glUniform2f(texScaleLocation, sectionW, sectionH);
 
-        int offsetLocation = GL20.glGetUniformLocation(Frame.textureShader.id, "offset");
-        GL20.glUniform2f(offsetLocation, x, y);
+        int offsetLocation = GL20.glGetUniformLocation(textureShader.id, "offset");
+        GL20.glUniform2f(offsetLocation, x + (w/2), y + (h/2));
 
-        int offsetScaleLocation = GL20.glGetUniformLocation(Frame.textureShader.id, "offsetScale");
+        int offsetScaleLocation = GL20.glGetUniformLocation(textureShader.id, "offsetScale");
         GL20.glUniform2f(offsetScaleLocation, w, h);
 
-        int colorLocation = GL20.glGetUniformLocation(Frame.textureShader.id, "color");
+        int colorLocation = GL20.glGetUniformLocation(textureShader.id, "color");
         GL20.glUniform3f(colorLocation, color.getRed()/255f, color.getGreen()/255f, color.getBlue()/255f);
 
-        int seedLocation = GL20.glGetUniformLocation(Frame.textureShader.id, "seed");
+        int seedLocation = GL20.glGetUniformLocation(textureShader.id, "seed");
         GL20.glUniform1f(seedLocation, random.nextFloat());
 
         float f;
         if(!hasNoise) f = 0;
         else f = noiseStrength;
-        int noiseStrengthLocation = GL20.glGetUniformLocation(Frame.textureShader.id, "noiseLevel");
+        int noiseStrengthLocation = GL20.glGetUniformLocation(textureShader.id, "noiseLevel");
         GL20.glUniform1f(noiseStrengthLocation, f);
 
-        GL30.glBindVertexArray(Frame.vao);
+        GL30.glBindVertexArray(vao);
         GL11.glDrawElements(GL11.GL_TRIANGLES, 6, GL11.GL_UNSIGNED_INT, 0);
         GL30.glBindVertexArray(0);
 
         GL20.glUseProgram(0);
     }
-    public void renderTexture(float x, float y, float w, float h, int texture, boolean overrideAspectRatio, boolean hasNoise, float noiseStrength){
-        renderTexture(x,y,w,h,0,0,1,1, texture,overrideAspectRatio, Color.WHITE,hasNoise,noiseStrength);
+    public void renderTexture(float x, float y, float w, float h, int texture, boolean hasNoise, float noiseStrength){
+        renderTexture(x,y,w,h,0,0,1,1, texture, Color.WHITE,hasNoise,noiseStrength);
     }
     public void renderTexture(float x, float y, float w, float h, Texture texture, boolean overrideAspectRatio, boolean hasNoise, float noiseStrength){
         if(!overrideAspectRatio && w / h != texture.getAspectRatio()){
@@ -103,11 +120,40 @@ public class Renderer {
 
     public void renderTextureSectionScreen(float x, float y, float w, float h,float sectionX, float sectionY, float sectionW, float sectionH, Texture texture, boolean overrideAspectRatio){
         float f = 1;
-        renderTexture(x / Frame.width * f,y / Frame.height *f,w / Frame.width *f,h / Frame.height*f,sectionX / texture.getWidth(),sectionY / texture.getHeight(),sectionW / texture.getWidth(),sectionH / texture.getHeight(),texture,overrideAspectRatio, Color.WHITE, false,0);
+        renderTexture(x / width * f,y / height *f,w / width *f,h / height*f,sectionX / texture.getWidth(),sectionY / texture.getHeight(),sectionW / texture.getWidth(),sectionH / texture.getHeight(),texture,overrideAspectRatio, Color.WHITE, false,0);
     }
 
     public void renderText(String text, float x, float y, float fontSize, Color c) {
         renderText(text,x,y,fontSize,c.getRed()/255f,c.getGreen()/255f,c.getBlue()/255f);
+    }
+
+    public float textWidth(String text, float fontSize){
+        FontData fontData = fontDataMap.get(fontSize);
+
+        if (fontData == null) {
+            loadFontTexture(fontPath, fontSize);
+            fontData = fontDataMap.get(fontSize);
+        }
+
+        float width = 0;
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            float[] xPos = {0};
+            float[] yPos = {0};
+
+            for (char c : text.toCharArray()) {
+                if (c < 32 || c >= 128) continue;
+
+                STBTTAlignedQuad quad = STBTTAlignedQuad.mallocStack(stack);
+                stbtt_GetBakedQuad(fontData.charData, BITMAP_W, BITMAP_H, c - 32, xPos, yPos, quad, true);
+
+                float w = quad.x1() - quad.x0();
+
+                width+=w;
+            }
+        }
+
+        return width;
     }
 
     public void renderText(String text, float x, float y, float fontSize, float r, float g, float b) {
@@ -213,5 +259,40 @@ public class Renderer {
             this.textureID = textureID;
             this.charData = charData;
         }
+    }
+
+    public int createVertexArray() {
+        float[] vertices = {
+                -0.5f,  0.5f, 0.0f,  0.0f, 1.0f,
+                -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
+                0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
+                0.5f,  0.5f, 0.0f,  1.0f, 1.0f
+        };
+
+        int[] indices = {
+                0, 1, 2,
+                2, 3, 0
+        };
+
+        int vao = GL30.glGenVertexArrays();
+        GL30.glBindVertexArray(vao);
+
+        int vbo = GL15.glGenBuffers();
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertices, GL15.GL_STATIC_DRAW);
+
+        int ebo = GL15.glGenBuffers();
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ebo);
+        GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indices, GL15.GL_STATIC_DRAW);
+
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 5 * Float.BYTES, 0);
+        GL20.glEnableVertexAttribArray(0);
+
+        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 5 * Float.BYTES, 3 * Float.BYTES);
+        GL20.glEnableVertexAttribArray(1);
+
+        GL30.glBindVertexArray(0);
+
+        return vao;
     }
 }

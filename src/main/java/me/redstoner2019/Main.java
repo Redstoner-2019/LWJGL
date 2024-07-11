@@ -1,24 +1,17 @@
 package me.redstoner2019;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 
 public class Main {
-    public static void main(String[] args) {
-        System.out.println("Hello world!");
+    public static void main(String[] args) throws IOException {
+        BufferedImage image = ImageIO.read(new File("/textures/jump.jpg"));
 
-        JFileChooser chooser = new JFileChooser();
-        chooser.setFileFilter(new FileFilter() {
-            @Override
-            public boolean accept(File f) {
-                return false;
-            }
-
-            @Override
-            public String getDescription() {
-                return "";
-            }
-        });
+        System.out.println(new Color(image.getRGB(0,0)));
     }
 }

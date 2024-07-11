@@ -24,19 +24,25 @@ vec4 lerp(vec4 a, vec4 b, float t) {
 
 
 void main() {
+    //vec4 previousColor = texelFetch(prevFramebuffer, coord, 0);
+
     vec2 textureCoord = (fragTexCoord * texScale) + texOffset;
 
     vec2 txc = textureCoord;
 
-    float distance = texture(textureSampler, textureCoord).r;
-    float alpha = smoothstep(0.5 - 0.5 / 16.0, 0.5 + 0.5 / 16.0, distance);
+    vec4 textureColor = texture(textureSampler, textureCoord);
 
-    vec4 color = texture(textureSampler, textureCoord) * vec4(color,1);
+    vec4 recoloredColor = textureColor * vec4(color,0);
+
     vec4 randomColor = vec4(random(vec2(seed,seed+1) + txc),random(vec2(seed,seed+2) + txc),random(vec2(seed,seed+3) + txc),random(vec2(seed,seed+4) + txc));
 
-    //color = vec4(color.r + (color.r * random(vec2(seed,seed+1) + txc,noiseLevel)),color.g + (color.g * random(vec2(seed,seed+2) + txc,noiseLevel)),color.b + (color.b * random(vec2(seed,seed+3) + txc,noiseLevel)),color.a + (color.a * random(vec2(seed,seed+4) + txc,noiseLevel)));
+    if(textureColor.a == 0) {
+        //is transparent pixel
+        fragColor = vec4(1,0,1,0);
+    } else {
+        //is not transparent
+        fragColor = lerp(textureColor,randomColor,noiseLevel);
+    }
 
-    fragColor = lerp(color,randomColor,noiseLevel);
-
-    //fragColor = vec4(textureCoord,0,0);
+    //fragColor = vec4(textureColor.xy,textureColor.a,1);
 }
