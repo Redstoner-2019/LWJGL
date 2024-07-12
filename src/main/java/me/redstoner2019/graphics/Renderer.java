@@ -33,7 +33,7 @@ public class Renderer {
     private int height;
 
     private Map<Float, Renderer.FontData> fontDataMap = new HashMap<>();
-    private String fontPath = "C:\\Users\\l.paepke\\Projects\\LWJGL\\src\\main\\resources\\fonts\\TNR.ttf";
+    private String fontPath = "src\\main\\resources\\fonts\\TNR.ttf";
 
     public int vao;
     public ShaderProgram textureShader;
@@ -112,9 +112,13 @@ public class Renderer {
         renderTexture(x,y,w,h,0,0,1,1, texture, Color.WHITE,hasNoise,noiseStrength);
     }
     public void renderTexture(float x, float y, float w, float h, Texture texture, boolean overrideAspectRatio, boolean hasNoise, float noiseStrength){
-        if(!overrideAspectRatio && w / h != texture.getAspectRatio()){
-            h = h * (texture.getAspectRatio());
-        }
+        renderTexture(x,y,w,h,0,0,1,1, texture,true, Color.WHITE, hasNoise,noiseStrength);
+    }
+
+    public void renderTexture(float x, float y,float w, Texture texture, boolean hasNoise, float noiseStrength){
+        float h = w * ((float) texture.getWidth() / texture.getHeight()) /* ((float) this.width / this.height)*/;
+        System.out.println(w + " " + h + " " + texture.getWidth() + " " + texture.getHeight() + " " + texture.getAspectRatio());
+        System.out.println(width + " / " + height);
         renderTexture(x,y,w,h,0,0,1,1, texture,true, Color.WHITE, hasNoise,noiseStrength);
     }
 
@@ -294,5 +298,9 @@ public class Renderer {
         GL30.glBindVertexArray(0);
 
         return vao;
+    }
+
+    public float getAspectRatio(){
+        return (float) width / height;
     }
 }

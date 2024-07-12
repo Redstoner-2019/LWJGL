@@ -10,8 +10,6 @@ import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        BufferedImage image = ImageIO.read(new File("/textures/jump.jpg"));
 
-        System.out.println(new Color(image.getRGB(0,0)));
     }
 }

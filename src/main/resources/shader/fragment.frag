@@ -44,5 +44,6 @@ void main() {
         fragColor = lerp(textureColor,randomColor,noiseLevel);
     }
 
+    fragColor = lerp(textureColor,randomColor,noiseLevel);
     //fragColor = vec4(textureColor.xy,textureColor.a,1);
 }

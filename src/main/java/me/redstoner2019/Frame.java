@@ -1,5 +1,6 @@
 package me.redstoner2019;
 
+import me.redstoner2019.audio.SoundPlayer;
 import me.redstoner2019.graphics.Renderer;
 import me.redstoner2019.graphics.general.Shader;
 import me.redstoner2019.graphics.general.ShaderProgram;
@@ -32,8 +33,10 @@ public class Frame {
     public static int vao;
     private boolean showDebug = true;
     private HashMap<String,Texture> textures = new HashMap<>();
+    private HashMap<String, SoundPlayer> sounds = new HashMap<>();
     private boolean loadingComplete = false;
-    private List<String> files = new ArrayList<>();
+    private List<String> textureFiles = new ArrayList<>();
+    private List<String> soundFiles = new ArrayList<>();
     private Renderer renderer = new Renderer();
 
     public void run() throws IOException {
@@ -104,9 +107,10 @@ public class Frame {
         textureShader.attachShader(fragmentShader);
         textureShader.link();
 
-        loadingTexture = Texture.loadTexture("C:\\Users\\l.paepke\\Projects\\LWJGL\\src\\main\\resources\\textures\\jump.jpg");
+        loadingTexture = Texture.loadTexture("src\\main\\resources\\textures\\jump.jpg");
 
-        files.addAll(listFilesUsingJavaIO("C:\\Users\\l.paepke\\Projects\\LWJGL\\src\\main\\resources\\textures"));
+        textureFiles.addAll(listFilesUsingJavaIO("src\\main\\resources\\textures"));
+        soundFiles.addAll(listFilesUsingJavaIO("src\\main\\resources\\audio"));
     }
 
     public Set<String> listFilesUsingJavaIO(String dir) {
@@ -133,6 +137,15 @@ public class Frame {
         int id = 0;
         long lastRandomChange = System.currentTimeMillis();
 
+        if(id < textureFiles.size()) {
+            File f = new File(textureFiles.get(id));
+            if(f.getName().endsWith(".png") || f.getName().endsWith(".jpg")) {
+                textures.put(f.getName(),Texture.loadTexture(f.getAbsolutePath()));
+            }
+            id++;
+        } else loadingComplete = true;
+
+
         while (!GLFW.glfwWindowShouldClose(window)) {
             double start = glfwGetTime();
 
@@ -154,8 +167,8 @@ public class Frame {
                 }
             }
 
-            if(id < files.size()) {
-                File f = new File(files.get(id));
+            if(id < textureFiles.size()) {
+                File f = new File(textureFiles.get(id));
                 if(f.getName().endsWith(".png") || f.getName().endsWith(".jpg")) {
                     textures.put(f.getName(),Texture.loadTexture(f.getAbsolutePath()));
                 }

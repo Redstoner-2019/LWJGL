@@ -5,5 +5,6 @@ public enum Menu {
     PRE_GAME,
     OFFICE,
     CAMERAS,
+    NIGHT_END,
     CUSTOM_NIGHT
 }

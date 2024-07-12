@@ -41,6 +41,8 @@ public class Texture {
     }
 
     public void uploadData(int internalFormat, int width, int height, int format, ByteBuffer data) {
+        this.width = width;
+        this.height = height;
         glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     }
 
@@ -58,7 +60,7 @@ public class Texture {
         }
     }
     public float getAspectRatio(){
-        return (float) height / width;
+        return (float) (getWidth() / getHeight());
     }
 
     public int getHeight() {
@@ -108,15 +110,16 @@ public class Texture {
         }
 
         return createTexture(width, height, image);*/
-        return new Texture(loadTextureNew(path));
+        return loadTextureNew(path);
     }
 
     public int getId() {
         return id;
     }
 
-    public static int loadTextureNew(String filePath) {
+    public static Texture loadTextureNew(String filePath) {
         int textureID;
+        Texture t;
         try (MemoryStack stack = stackPush()) {
             IntBuffer width = stack.mallocInt(1);
             IntBuffer height = stack.mallocInt(1);
@@ -126,7 +129,7 @@ public class Texture {
             ByteBuffer image = STBImage.stbi_load(filePath, width, height, channels, 4);
             if (image == null) {
                 System.out.println("Failed to load texture file: " + filePath);
-                return -1;
+                return null;
             }
 
             System.out.println("Loaded texture: " + filePath + " (Width: " + width.get(0) + ", Height: " + height.get(0) + ")");
@@ -141,7 +144,13 @@ public class Texture {
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
             STBImage.stbi_image_free(image);
+
+            t = new Texture(textureID);
+
+            t.setWidth(width.get(0));
+            t.setHeight(height.get(0));
         }
-        return textureID;
+
+        return t;
     }
 }
